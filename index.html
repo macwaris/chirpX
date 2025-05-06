@@ -236,7 +236,7 @@
   </div>
 
   <footer>
-    <b>@macwaris production © 2025</b>
+    <b>@macwaris production</b>
   </footer>
 
   <!-- About Modal -->
@@ -258,94 +258,102 @@
 
   <script>
     const form = document.getElementById('tweetForm');
-const usernameInput = document.getElementById('username');
-const tweetText = document.getElementById('tweetText');
-const feed = document.getElementById('feed');
-const emojiBtn = document.getElementById('emojiBtn');
-const emojiPicker = document.getElementById('emojiPicker');
+    const usernameInput = document.getElementById('username');
+    const tweetText = document.getElementById('tweetText');
+    const feed = document.getElementById('feed');
+    const aboutBtn = document.getElementById('aboutBtn');
+    const aboutModal = document.getElementById('aboutModal');
+    const closeModal = document.getElementById('closeModal');
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPicker = document.getElementById('emojiPicker');
 
-// Load posts from localStorage or start with an empty array
-let savedPosts = JSON.parse(localStorage.getItem('posts')) || [];
+    let savedPosts = JSON.parse(localStorage.getItem('posts')) || [];
 
-// Function to update localStorage with the current posts
-function updateLocalStorage() {
-  localStorage.setItem('posts', JSON.stringify(savedPosts));
-}
+    function updateLocalStorage() {
+      localStorage.setItem('posts', JSON.stringify(savedPosts));
+    }
 
-// Function to render a post
-function renderPost(postData, index) {
-  const post = document.createElement('div');
-  post.classList.add('post');
-  
-  post.innerHTML = `
-    <div class="post-username">@${postData.username}</div>
-    <div>${postData.text}</div>
-    <div class="post-time">Posted at ${postData.time}</div>
-    <div class="post-buttons">
-      <button class="like-btn" data-index="${index}">👍 Like</button>
-      <span class="like-count">${postData.likes} like${postData.likes !== 1 ? 's' : ''}</span>
-      <button class="delete-btn" data-index="${index}">🗑️ Delete</button>
-    </div>
-  `;
+    function renderPost(postData, index) {
+      const post = document.createElement('div');
+      post.classList.add('post');
 
-  // Handle like button
-  post.querySelector('.like-btn').addEventListener('click', () => {
-    savedPosts[index].likes += 1;
-    updateLocalStorage();
+      post.innerHTML = `
+        <div class="post-username">@${postData.username}</div>
+        <div>${postData.text}</div>
+        <div class="post-time">Posted at ${postData.time}</div>
+        <div class="post-buttons">
+          <div class="like-section">
+            <button class="like-btn" data-index="${index}">👍 Like</button>
+            <span class="like-count">${postData.likes} like${postData.likes !== 1 ? 's' : ''}</span>
+          </div>
+          <button class="delete-btn" data-index="${index}">🗑️ Delete</button>
+        </div>
+      `;
+
+      post.querySelector('.like-btn').addEventListener('click', () => {
+        savedPosts[index].likes += 1;
+        updateLocalStorage();
+        refreshFeed();
+      });
+
+      post.querySelector('.delete-btn').addEventListener('click', () => {
+        savedPosts.splice(index, 1);
+        updateLocalStorage();
+        refreshFeed();
+      });
+
+      feed.prepend(post);
+    }
+
+    function refreshFeed() {
+      feed.innerHTML = '';
+      savedPosts.forEach((post, idx) => renderPost(post, idx));
+    }
+
     refreshFeed();
-  });
 
-  // Handle delete button
-  post.querySelector('.delete-btn').addEventListener('click', () => {
-    savedPosts.splice(index, 1);
-    updateLocalStorage();
-    refreshFeed();
-  });
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const text = tweetText.value.trim();
+      if (username && text) {
+        const time = new Date().toLocaleTimeString();
+        const newPost = { username, text, time, likes: 0 };
+        savedPosts.push(newPost);
+        updateLocalStorage();
+        refreshFeed();
+        tweetText.value = '';
+      }
+    });
 
-  feed.prepend(post);
-}
+    // Modal
+    aboutBtn.addEventListener('click', () => {
+      aboutModal.style.display = 'block';
+    });
 
-// Function to refresh the feed
-function refreshFeed() {
-  feed.innerHTML = '';
-  savedPosts.forEach((post, idx) => renderPost(post, idx));
-}
+    closeModal.addEventListener('click', () => {
+      aboutModal.style.display = 'none';
+    });
 
-// Call refreshFeed on page load to show saved posts
-refreshFeed();
+    window.addEventListener('click', (e) => {
+      if (e.target === aboutModal) {
+        aboutModal.style.display = 'none';
+      }
+    });
 
-// Handle form submission
-form.addEventListener('submit', function (e) {
-  e.preventDefault();
-  
-  const username = usernameInput.value.trim();
-  const text = tweetText.value.trim();
+    // Emoji picker
+    emojiBtn.addEventListener('click', () => {
+      emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+    });
 
-  if (username && text) {
-    const time = new Date().toLocaleTimeString();
-    const newPost = { username, text, time, likes: 0 };
-
-    savedPosts.push(newPost);
-    updateLocalStorage();
-    refreshFeed();
-    tweetText.value = ''; // Reset the textarea
-  }
-});
-
-// Emoji picker
-emojiBtn.addEventListener('click', () => {
-  emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
-});
-
-emojiPicker.addEventListener('emoji-click', event => {
-  const emoji = event.detail.unicode;
-  const start = tweetText.selectionStart;
-  const end = tweetText.selectionEnd;
-  tweetText.value = tweetText.value.slice(0, start) + emoji + tweetText.value.slice(end);
-  tweetText.focus();
-  tweetText.selectionStart = tweetText.selectionEnd = start + emoji.length;
-});
-
+    emojiPicker.addEventListener('emoji-click', event => {
+      const emoji = event.detail.unicode;
+      const start = tweetText.selectionStart;
+      const end = tweetText.selectionEnd;
+      tweetText.value = tweetText.value.slice(0, start) + emoji + tweetText.value.slice(end);
+      tweetText.focus();
+      tweetText.selectionStart = tweetText.selectionEnd = start + emoji.length;
+    });
   </script>
 </body>
 </html>
